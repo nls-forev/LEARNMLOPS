@@ -2,3 +2,9 @@
 __pycache__
 learn
 docs
+logs
+pyrightconfig.json
+*.db
+mlruns
+output
+.vscode
