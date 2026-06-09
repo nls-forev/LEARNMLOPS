@@ -19,8 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install uv ruff
-          uv pip install -r requirements.txt --system
+          pip install ruff
 
       - name: Check linting
         run: ruff check .

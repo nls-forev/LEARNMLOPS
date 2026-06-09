@@ -6,5 +6,4 @@ logs
 pyrightconfig.json
 *.db
 mlruns
-output
 .vscode
