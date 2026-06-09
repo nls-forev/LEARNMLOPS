@@ -1,0 +1,17 @@
+.git
+.venv
+__pycache__
+.pytest_cache
+.mypy_cache
+.vscode
+
+config
+docs
+learn
+logs
+mlruns
+utils
+
+*.yaml
+*.db
+*.json
