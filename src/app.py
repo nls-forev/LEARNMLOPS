@@ -4,7 +4,16 @@ from fastapi import FastAPI, Request
 
 
 app = FastAPI()
-session = ort.InferenceSession("output/model.onnx")
+
+# Single-threaded session options
+sess_opts = ort.SessionOptions()
+sess_opts.intra_op_num_threads = 1  # one thread for parallelism inside operators
+sess_opts.inter_op_num_threads = 1  # one thread for parallelism across operators
+sess_opts.execution_mode = (
+    ort.ExecutionMode.ORT_SEQUENTIAL
+)  # disable internal parallelism
+
+session = ort.InferenceSession("output/model.onnx", sess_options=sess_opts)
 
 
 @app.post("/predict")
