@@ -2,6 +2,6 @@ import redis
 
 r = redis.Redis(
     "localhost",
-    port=8000,
+    port=6379,
     decode_responses=True,
 )
