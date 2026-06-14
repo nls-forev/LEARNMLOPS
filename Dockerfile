@@ -14,4 +14,4 @@ COPY src/ src/
 COPY output/model.onnx output/model.onnx
 
 # Start FastAPI
-CMD ["uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "8"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "8"]

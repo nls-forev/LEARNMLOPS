@@ -2,7 +2,7 @@ import onnxruntime as ort
 import hashlib
 import json
 from fastapi import FastAPI, Request
-from cache.redis_client import r
+from src.cache.redis_client import r
 
 app = FastAPI()
 

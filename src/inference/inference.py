@@ -16,8 +16,8 @@ response = requests.post(
     "http://127.0.0.1:8000/predict",
     json={
         "input": "input",
-        "X": X_test[100:101].astype(np.float32).tolist(),
+        "X": X_test[0:1].astype(np.float32).tolist(),
     },
 ).content.decode()
 
-print(json.loads(response)["response"])
+print(json.loads(response))

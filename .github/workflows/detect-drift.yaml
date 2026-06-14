@@ -1,0 +1,127 @@
+name: drift-retrain-deploy
+
+on:
+  schedule:
+    - cron: "0 1 * * *" # Daily at 1 AM UTC
+
+
+  workflow_dispatch:
+
+jobs:
+  detect_drift:
+    runs-on: ubuntu-latest
+
+    outputs:
+      drift_detected: ${{ steps.drift.outputs.drift_detected }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install --system -r requirements.txt
+
+      - name: Detect drift
+        id: drift
+        run: |
+          python src/monitoring/detect_drift.py
+
+          # detect_drift.py will create drift.flag if drift exists
+          if [[ -f drift.flag ]]; then
+            echo "drift_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "drift_detected=false" >> $GITHUB_OUTPUT
+          fi
+
+  retrain:
+    needs: detect_drift
+    if: needs.detect_drift.outputs.drift_detected == 'true'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install --system -r requirements.txt
+
+      - name: Train challenger
+        run: |
+          python src/training/train.py
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: challenger-model
+          path: output/challenger.onnx
+
+  promotion_gate:
+    needs: retrain
+    runs-on: ubuntu-latest
+
+    outputs:
+      promote: ${{ steps.gate.outputs.promote }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install uv
+          uv pip install --system -r requirements.txt
+
+      - name: Download challenger
+        uses: actions/download-artifact@v4
+        with:
+          name: challenger-model
+          path: output/
+
+      - name: Run promotion gate
+        id: gate
+        run: |
+          python src/training/evaluate.py
+
+          # evaluate.py creates promote.flag if challenger wins
+          if [[ -f promote.flag ]]; then
+            echo "promote=true" >> $GITHUB_OUTPUT
+          else
+            echo "promote=false" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    needs: promotion_gate
+    if: needs.promotion_gate.outputs.promote == 'true'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: build docker image
+        run: |
+          docker build -t cancer:v1 .
